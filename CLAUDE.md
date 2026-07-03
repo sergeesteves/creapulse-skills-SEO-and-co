@@ -4,9 +4,16 @@ Contexte de projet chargé automatiquement à chaque session ouverte dans ce dos
 
 ## Ce qu'est ce projet
 
-Librairie **monorepo** de skills Claude Code orientés marketing : **SEO en cœur** (éclaté en
-sous-domaines : internal-linking, technical, on-page, keyword research, GEO/AI search, etc.)
-+ adjacents : analytics (GTM/GA4/Looker Studio), content, social, UX, design, CRO, landing pages.
+Librairie **monorepo** Claude Code orientée marketing, en **trois couches** :
+- **skills/** (couche 1) — savoir-faire atomiques : **SEO en cœur** (internal-linking, technical, on-page,
+  keyword research, GEO/AI search…) + adjacents (analytics GTM/GA4/Looker, content, social, UX, design,
+  CRO, landing). **Vendorés** depuis GitHub + tracés dans `registry.yml`.
+- **agents/** (couche 2) — **métiers écrits maison** qui composent les skills (ex. `ai-citation-strategist`).
+  Pas de vendoring : inspiration seulement (cf. ROADMAP §5.2). Voir `agents/README.md`.
+- **plugins/** (couche 3, PLUS TARD) — packaging installable qui combine skills + agents + connecteurs.
+
+Rappel du modèle : **skill = savoir-faire, agent = qui le fait, connecteur = avec quel outil,
+plugin = comment on livre.** Ne pas construire la couche plugin par anticipation.
 
 But : **constituer ET maintenir dans le temps** cette librairie — curation depuis GitHub,
 vendoring propre, normalisation, puis maintenance via deux veilles (upstream + web).
@@ -18,7 +25,12 @@ vendoring propre, normalisation, puis maintenance via deux veilles (upstream + w
 - **Vendoring + manifeste de provenance** (`registry.yml`) : on copie l'utile, on trace
   `source_repo` + `source_sha` + `license` + `tracking` (`tracked` vs `forked-hard`) **par skill**.
   Pas de multiples forks.
-- **Monorepo unique** (pas un repo par domaine).
+- **Monorepo unique** (pas un repo par domaine), **3 couches** : `skills/` + `agents/` maintenant,
+  `plugins/` + `marketplace.json` plus tard.
+- **Agents = écrits maison** (inspiration `msitarzewski/agency-agents` + agents de `AgriciDaniel/claude-seo`,
+  adaptés FR/Creapulse). Pas de vendoring pour les agents.
+- **Sources d'inspiration skills** (ordre de priorité, cf. ROADMAP §5.1) : `aaron-he-zhu/seo-geo-claude-skills`,
+  `AgriciDaniel/claude-seo`, `coreyhaines31/marketingskills`, `resciencelab/opc-skills`.
 - Les 2 veilles de maintenance (diff upstream + veille web Google/SEO) **proposent**, Serge valide.
   **Jamais d'auto-merge.**
 - **Ne pas industrialiser avant d'avoir rodé un domaine pilote complet** (suggéré : SEO/internal-linking
