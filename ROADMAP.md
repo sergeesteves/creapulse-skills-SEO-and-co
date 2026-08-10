@@ -172,6 +172,18 @@ La veille (Phase 5) surveille **deux types de changements** sur les repos ci-des
 
 Sortie dans les deux cas : un **rapport + propositions**, jamais d'auto-merge. Serge valide.
 
+### 5.4 Sources d'idées (hors vendoring — « à garder sous le coude »)
+
+Repos qui ne fournissent **pas** de skills/agents à copier, mais qui inspirent des **thèmes, features ou
+automatisations** reliés à l'activité. On ne les vendorise pas, on ne les trace pas dans `registry.yml` —
+on les consulte au besoin (et la veille peut y repérer des idées neuves).
+
+- [Shubhamsaboo/awesome-llm-apps](https://github.com/Shubhamsaboo/awesome-llm-apps) — 100+ apps LLM
+  d'exemple (agents, RAG, MCP, voice, always-on), Apache 2.0. Un peu fourre-tout, mais sections pertinentes :
+  *AI Competitor Intelligence*, *Product Launch Intelligence*, *AI News & Podcast Agent*, *Always-on HN
+  briefing* (veille), *Web Scraping Agent*, *RAG apps* (base de connaissances). Idées d'**automatisations
+  n8n / agents métier**, pas des skills à intégrer tels quels.
+
 ---
 
 ## 6. Architecture du repo (monorepo, 3 couches)
