@@ -146,6 +146,18 @@ Ils sont aussi **suivis par la veille upstream** (nouveaux skills, évolutions).
 | 3 | [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills) | 50+ skills marketing (CRO, copy, content, social, ads, analytics, SEO), 35,9k ⭐, très maintenu, skill-socle `product-marketing` | MIT | **Domaines adjacents** : content / social / CRO / landing |
 | 4 | [resciencelab/opc-skills](https://github.com/resciencelab/opc-skills) | 11 skills solopreneur (seo-geo, reddit, twitter, producthunt, image gen nanobanana/logo/banner) | Apache 2.0 | Plus léger — recoupe le **pipeline image** (Replicate) et la **veille** (reddit/twitter). À piocher ponctuellement |
 
+**Skills unitaires** (repos mono-skill, hors classement de priorité) :
+
+- [Suganthan-Mohanadasan/tech-seo-audit-skill](https://github.com/Suganthan-Mohanadasan/tech-seo-audit-skill)
+  — `SKILL.md` d'audit SEO technique, 10 catégories (crawlability, indexation, on-page, archi, perf, mobile,
+  schema, sécurité, international, **AI readiness**), moteur Python (pandas/beautifulsoup4/firecrawl-py optionnel),
+  MIT, MAJ mars 2026. **Candidat fort pour le pilote SEO/technical** — nuance : dépendances Python = plus lourd
+  qu'un skill pur-prompt (cf. critère §4 « pas de dépendances lourdes »). À arbitrer vs `aaron-he-zhu` pour le pilote.
+- [Suganthan-Mohanadasan/avoid-ai-writing](https://github.com/Suganthan-Mohanadasan/avoid-ai-writing)
+  — `SKILL.md` qui retire les patterns d'écriture IA (61+ signatures, détecteur déterministe zéro-dépendance),
+  MIT. Domaine *content*. ⚠️ **Recoupe le skill `humanizer`** déjà présent dans `creapulse-tools` → arbitrer
+  lequel garder avant de vendoriser (éviter le doublon).
+
 ### 5.2 Agents — repos d'inspiration rédactionnelle (PAS de vendoring)
 
 Les agents sont des **prompts de rôle** : on s'en inspire pour rédiger nos propres métiers, on ne les copie pas tels quels.
@@ -189,6 +201,20 @@ trace pas dans `registry.yml` — on les consulte au besoin (et la veille peut y
   **Référence outillage** : sert surtout à repérer les outils **avec API** → candidats connecteurs pour les
   agents (ex. DataForSEO, SearchAPI.io — cf. décision ouverte §9). Utile aussi pour l'agent
   `ai-citation-strategist` (section LLM visibility) et le front WordPress (section plugins).
+
+### 5.5 Connecteurs (MCP) — candidats à brancher sur les agents
+
+Les connecteurs sont un **axe distinct** (cf. §1) : un serveur MCP ne se **vendorise pas** dans `skills/`,
+il s'**installe/configure** (env vars, credentials), puis se **bundle** plus tard dans le `.mcp.json` d'un
+plugin. On les liste ici comme candidats, on décide lesquels brancher en §9.
+
+| Connecteur | Source | Ce qu'il expose | Domaine nourri | Notes |
+|---|---|---|---|---|
+| **GSC** | [Suganthan…/Suganthans-GSC-MCP](https://github.com/Suganthan-Mohanadasan/Suganthans-GSC-MCP) | 20 outils (snapshots, quick wins, cannibalisation, content decay, CTR, indexation URL/sitemap) — Node/TS, MIT | Reporting SEO / GSC | **Le plus actionnable.** Auth OAuth ou service account, API Search Console à activer sur GCP |
+| **BigQuery** | [Suganthan…/BigQuery-MCP-Server](https://github.com/Suganthan-Mohanadasan/Suganthans-BigQuery-MCP-Server) | 32 outils (forecasting, anomalies, GSC bulk export, blend GA4+GSC, attribution/ROI) — Node/TS, Apache 2.0 | Analytics | Puissant mais **setup GCP/BigQuery** (service account, 3 rôles IAM, export bulk GSC) |
+| **KWI content calendar** | [Suganthan…/kwi-content-calendar-mcp](https://github.com/Suganthan-Mohanadasan/kwi-content-calendar-mcp) | 2 outils : parse CSV clustering Keyword Insights → calendrier éditorial Excel (5 feuilles) — Node/TS, MIT | Content SEO | Niche — **dépend d'un export de l'outil Keyword Insights** (18 colonnes) |
+
+> Rappel : Firecrawl est **déjà** dispo en MCP dans l'environnement de Serge — 1er connecteur « gratuit » pour les agents.
 
 ---
 
@@ -306,6 +332,9 @@ skills:
   curatée** pour le public, plutôt que d'ouvrir celui-ci tel quel.
 - **Packaging plugin** : un seul plugin global ou un plugin par domaine ? (tranche en Phase 3)
 - **Cadence des veilles** (hebdo ? mensuel ?) et canal de notification (Slack ? mail ?)
-- **Connecteurs** : lesquels brancher en premier sur les agents (DataForSEO ? Firecrawl — déjà dispo en MCP ?)
+- **Connecteurs** : lesquels brancher en premier sur les agents (cf. candidats §5.5). Piste : **Firecrawl**
+  (déjà dispo) + **GSC-MCP** (le plus actionnable, données propres à Creapulse) ; BigQuery-MCP plus tard
+  (setup GCP lourd) ; DataForSEO / SearchAPI.io si besoin de données SERP externes.
+- **Doublon `avoid-ai-writing` vs `humanizer`** : garder lequel ? (arbitrer avant de vendoriser, cf. §5.1)
 </content>
 </invoke>
