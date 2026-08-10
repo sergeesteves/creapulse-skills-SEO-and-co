@@ -210,7 +210,7 @@ plugin. On les liste ici comme candidats, on décide lesquels brancher en §9.
 
 | Connecteur | Source | Ce qu'il expose | Domaine nourri | Notes |
 |---|---|---|---|---|
-| **GSC** | [Suganthan…/Suganthans-GSC-MCP](https://github.com/Suganthan-Mohanadasan/Suganthans-GSC-MCP) | 20 outils (snapshots, quick wins, cannibalisation, content decay, CTR, indexation URL/sitemap) — Node/TS, MIT | Reporting SEO / GSC | **Le plus actionnable.** Auth OAuth ou service account, API Search Console à activer sur GCP |
+| **GSC** ✅ | [AminForou/mcp-gsc](https://github.com/AminForou/mcp-gsc) | 20 outils : accès GSC propre (analytics, URL inspection, sitemaps) — Python 3.11+, MIT, install `uvx` | Reporting SEO / GSC | **Choix retenu.** 1,3k ⭐, maintenu (SDK 2.0, juil. 2026), connecteur *mince* → l'intelligence SEO reste dans nos skills. Alt. : [Suganthan…/GSC-MCP](https://github.com/Suganthan-Mohanadasan/Suganthans-GSC-MCP) (Node/TS, analyses intégrées mais + petit/+ lourd à installer) |
 | **BigQuery** | [Suganthan…/BigQuery-MCP-Server](https://github.com/Suganthan-Mohanadasan/Suganthans-BigQuery-MCP-Server) | 32 outils (forecasting, anomalies, GSC bulk export, blend GA4+GSC, attribution/ROI) — Node/TS, Apache 2.0 | Analytics | Puissant mais **setup GCP/BigQuery** (service account, 3 rôles IAM, export bulk GSC) |
 | **KWI content calendar** | [Suganthan…/kwi-content-calendar-mcp](https://github.com/Suganthan-Mohanadasan/kwi-content-calendar-mcp) | 2 outils : parse CSV clustering Keyword Insights → calendrier éditorial Excel (5 feuilles) — Node/TS, MIT | Content SEO | Niche — **dépend d'un export de l'outil Keyword Insights** (18 colonnes) |
 
@@ -333,7 +333,7 @@ skills:
 - **Packaging plugin** : un seul plugin global ou un plugin par domaine ? (tranche en Phase 3)
 - **Cadence des veilles** (hebdo ? mensuel ?) et canal de notification (Slack ? mail ?)
 - **Connecteurs** : lesquels brancher en premier sur les agents (cf. candidats §5.5). Piste : **Firecrawl**
-  (déjà dispo) + **GSC-MCP** (le plus actionnable, données propres à Creapulse) ; BigQuery-MCP plus tard
+  (déjà dispo) + **GSC via `AminForou/mcp-gsc`** (choix retenu §5.5, données propres à Creapulse) ; BigQuery-MCP plus tard
   (setup GCP lourd) ; DataForSEO / SearchAPI.io si besoin de données SERP externes.
 - **Doublon `avoid-ai-writing` vs `humanizer`** : garder lequel ? (arbitrer avant de vendoriser, cf. §5.1)
 </content>
