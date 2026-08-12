@@ -1,0 +1,31 @@
+# Manifeste de provenance des skills vendorisés (cf. ROADMAP.md §2).
+# Chaque skill copié dans skills/ garde ici sa fiche d'identité.
+#
+# Champs par skill :
+#   source_repo   : repo GitHub d'origine
+#   source_path   : chemin du skill dans le repo source
+#   source_sha    : commit exact au moment de la copie (base des diffs de veille upstream)
+#   license       : licence du skill source
+#   tracking      : tracked (rester proche upstream) | forked-hard (fait nôtre, plus de sync)
+#                   | first-party (skill écrit maison — la "source" est notre propre repo canonique)
+#   local_changes : liste de nos modifications par rapport à la source
+#
+# NOTE (à valider par Serge) : la valeur `first-party` étend le schéma initial (tracked|forked-hard)
+# pour les skills qu'on écrit nous-mêmes et qu'on publie dans un repo dédié. Pour ceux-là, la veille
+# upstream n'a pas de sens : c'est NOUS l'upstream. Ajustable si tu préfères un autre nom.
+
+skills:
+  dataforseo:
+    source_repo: https://github.com/sergeesteves/dataforseo-mcp-skill
+    source_path: skill/
+    source_sha: e05f3f8adb9f55a8d59b04a2b11b241522e033fa
+    license: MIT
+    tracking: first-party
+    local_changes:
+      - Aucune (copie conforme du repo dédié à ce sha).
+    notes: >
+      Playbook cost-aware pour l'API DataForSEO, compagnon du serveur MCP officiel
+      (dataforseo-mcp-server). Couvre le choix endpoint + mode (Live/Standard/Labs)
+      et les garde-fous de coût (API prépayée). Recoupe partiellement le connecteur
+      DataForSEO d'AgriciDaniel/claude-seo (ROADMAP §5.1) — ici c'est un skill de
+      décision, pas un connecteur.
