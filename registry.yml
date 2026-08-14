@@ -18,7 +18,7 @@ skills:
   dataforseo:
     source_repo: https://github.com/sergeesteves/dataforseo-mcp-skill
     source_path: skill/
-    source_sha: c1f39defbdbf270772f28cd3732261da07c57744
+    source_sha: 9aba4de742324e3534e3263c0b4794d41d789d9b
     license: MIT
     tracking: first-party
     local_changes:
