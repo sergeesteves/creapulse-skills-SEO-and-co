@@ -238,17 +238,30 @@ creapulse-skills-SEO-and-co/
 │   ├── README.md              ← convention des agents
 │   ├── ai-citation-strategist.md
 │   └── ...
-├── plugins/                   ← COUCHE 3 : PLUS TARD — packaging installable
-│   └── seo/
-│       ├── .claude-plugin/plugin.json
-│       ├── agents/  skills/   └── .mcp.json   (DataForSEO, crawler…)
-├── .claude-plugin/
-│   └── marketplace.json       ← PLUS TARD — rend le repo installable comme marketplace
-└── overlays/                  ← nos patches/améliorations, séparés du code upstream
+├── build/                     ← TRANSVERSE (pas une couche) : chaîne de publication Skills API
+│   ├── README.md              ← règle : "on versionne la transformation, pas son résultat"
+│   ├── publish-skill.ps1      ← zip (+ apply.ps1 si présent) → POST /v1/skills
+│   ├── <nom>/apply.ps1        ← transformation rejouable d'un skill vendorisé (rebrand, neutralisation…)
+│   └── skill-ids.json         ← skill_id Anthropic (identifiant versionné, pas un secret)
+├── .github/workflows/publish-skills.yml   ← CI : push sur main → publie les skills changés
+├── plugins/                   ← COUCHE 3 : PLUS TARD — packaging Claude Code
+│   └── seo/ { .claude-plugin/plugin.json, agents/, skills/, .mcp.json } + .claude-plugin/marketplace.json
+└── dist/                      ← artefacts de build (zips) — gitignorés, jamais versionnés
 ```
 
 Décisions actées : **monorepo unique** ; **`skills/` et `agents/` maintenant**, **`plugins/` + `marketplace.json`
 plus tard** (Phase 3, quand une tranche mérite d'être livrée d'un bloc).
+
+**`build/` est transverse, pas une 4e couche** : c'est l'outillage qui *publie* les skills. Les mêmes skills de
+couche 1 ont **deux cibles de distribution** : (a) **Skills API Anthropic** via `build/` → consommée par n8n /
+`/v1/messages` (**opérationnelle**) ; (b) **plugin/marketplace Claude Code** via `plugins/` → consommée dans
+Claude Code (**plus tard**). Détail : [build/README.md](./build/README.md).
+
+**Modifs d'un skill vendorisé = transformation rejouable, jamais édition de la copie.** On n'édite pas
+`skills/<nom>/` (copie conforme à l'upstream) : les modifs vivent dans `build/<nom>/apply.ps1`, rejouées au
+build. C'est ce qui permet de rester `tracking: tracked` malgré des modifs massives (le diff upstream reste
+lisible). Ce modèle **remplace l'idée initiale d'`overlays/`** (patch statique) par une transformation
+exécutable et auto-vérifiée.
 
 ### Format cible de `registry.yml`
 ```yaml
@@ -260,10 +273,14 @@ skills:
     source_path: skills/internal-linking
     source_sha: <commit-sha-au-moment-de-la-copie>
     license: MIT
-    tracking: tracked        # tracked | forked-hard
+    tracking: tracked        # tracked | forked-hard | first-party
+    transform: build/<name>/apply.ps1   # optionnel : transformation rejouable → reste "tracked" malgré modifs
     local_changes: []
     last_upstream_check: null
 ```
+
+> `first-party` : skill écrit maison (notre repo = l'upstream, la veille n'a pas de sens). `transform` : présent
+> quand un `apply.ps1` rejoue nos modifs au build → la copie sous `skills/` reste conforme à l'upstream.
 
 ---
 
@@ -280,10 +297,14 @@ skills:
 ### Phase 1 — Domaine pilote (rôder le process de bout en bout)
 > Ne PAS industrialiser avant d'avoir rodé un domaine complet. Pilote suggéré : **SEO / internal-linking**
 > ou **SEO technical** (source privilégiée : `aaron-he-zhu/seo-geo-claude-skills`).
+>
+> ⚠️ **État réel (MAJ 2026-08-15)** : l'**axe publication** (git → Skills API → n8n) a déjà été rôdé de bout en
+> bout sur `diagram-design` (skill *design*, hors pilote SEO) + `dataforseo` (first-party). L'**axe curation SEO**
+> ci-dessous (internal-linking/technical) reste, lui, à dérouler. Deux axes distincts — décision d'ordre en §9.
 - [ ] Sélection des candidats du domaine pilote
 - [ ] Copie (vendoring) + remplissage `registry.yml` (avec SHA)
 - [ ] Revue commune de ce que fait chaque skill
-- [ ] Améliorations immédiates (dans `overlays/`) + backlog d'améliorations futures
+- [ ] Améliorations via **transformation rejouable** (`build/<nom>/apply.ps1`), jamais en éditant la copie vendorisée
 - [ ] Test de déclenchement (via `skill-creator` / evals)
 
 ### Phase 2 — Premier agent branché sur des skills
@@ -312,8 +333,10 @@ skills:
 
 ## 8. Points de gouvernance / risques
 
-- **Modifs locales vs sync** : garder nos améliorations dans `overlays/` (patch séparé) pour ne pas les
-  perdre au prochain sync upstream.
+- **Modifs locales vs sync** : nos modifs d'un skill vendorisé vivent dans `build/<nom>/apply.ps1`
+  (transformation rejouable + auto-vérifiée), **jamais** dans la copie `skills/<nom>/` (qui reste conforme à
+  l'upstream). Un `apply.ps1` **échoue bruyamment** si une ancre upstream a bougé → signal de relecture avant
+  republication. Ce modèle remplace l'idée d'`overlays/`.
 - **Licences & attribution** : copier le code d'autrui a des implications → tracées dans `registry.yml`.
   Les 4 repos skills sont MIT/Apache 2.0 (permissifs) — attribution à conserver.
 - **Agents ≠ vendoring** : les agents sont écrits maison (inspiration seulement) → pas d'entrée `registry.yml`
@@ -336,5 +359,8 @@ skills:
   (déjà dispo) + **GSC via `AminForou/mcp-gsc`** (choix retenu §5.5, données propres à Creapulse) ; BigQuery-MCP plus tard
   (setup GCP lourd) ; DataForSEO / SearchAPI.io si besoin de données SERP externes.
 - **Doublon `avoid-ai-writing` vs `humanizer`** : garder lequel ? (arbitrer avant de vendoriser, cf. §5.1)
-</content>
-</invoke>
+- **Ordre des pilotes** : on continue « need-driven » (skills utiles aux workflows n8n d'abord, comme
+  `diagram-design`/`dataforseo`) ou on revient dérouler le **pilote curation SEO** (internal-linking/technical)
+  pour roder *ce* process ? (cf. §7 Phase 1)
+- **Auto-publication CI** : `publish-skills.yml` publie à chaque push sur `main` (n8n suit `latest`). On garde ce
+  gate **automatique**, ou on passe en **manuel** (`workflow_dispatch` seul) pour valider avant que n8n ne bascule ?
