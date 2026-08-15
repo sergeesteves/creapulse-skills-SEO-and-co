@@ -1,20 +1,17 @@
 name: Publier les skills vers la Skills API
 
-# Publie vers l'API Anthropic les skills dont le contenu ou la transformation a changé.
+# Publie vers l'API Anthropic les skills (déclenchement MANUEL via workflow_dispatch).
 # Les workflows n8n qui demandent version:"latest" suivent sans modification.
 #
 # Prérequis : secret de dépôt ANTHROPIC_API_KEY.
+# Gate MANUEL au démarrage (on valide chaque publication à la main). Pour rebasculer en
+# publication automatique sur push, ré-ajouter le bloc `push:` ci-dessous (cf. ROADMAP §9).
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'skills/**'
-      - 'build/**'
   workflow_dispatch:
     inputs:
       skill:
-        description: "Nom du skill à publier (vide = tous ceux qui ont changé)"
+        description: "Nom du skill à publier (vide = tous les skills présents)"
         required: false
         type: string
       dry_run:
@@ -22,6 +19,9 @@ on:
         required: false
         type: boolean
         default: false
+
+permissions:
+  contents: write   # l'étape de réinjection commite/pushe build/skill-ids.json
 
 concurrency:
   group: publish-skills
@@ -42,21 +42,17 @@ jobs:
           $manuel = '${{ inputs.skill }}'.Trim()
 
           if ($manuel) {
+            # Un skill précis demandé dans l'input.
             $skills = @($manuel)
           } else {
-            # Un skill est concerné si son dossier source OU sa transformation a bougé.
-            $diff = git diff --name-only ${{ github.event.before }} ${{ github.sha }}
-            $skills = $diff |
-              ForEach-Object {
-                if ($_ -match '^skills/([^/]+)/') { $Matches[1] }
-                elseif ($_ -match '^build/([^/]+)/') { $Matches[1] }
-              } |
-              Where-Object { $_ -and (Test-Path "skills/$_/SKILL.md") } |
-              Sort-Object -Unique
+            # Sans skill précisé : on publie tous les skills présents (skills/*/SKILL.md).
+            $skills = Get-ChildItem skills -Directory |
+              Where-Object { Test-Path (Join-Path $_.FullName 'SKILL.md') } |
+              ForEach-Object { $_.Name } | Sort-Object -Unique
           }
 
           if (-not $skills) {
-            Write-Host "Aucun skill concerne."
+            Write-Host "Aucun skill trouve."
           } else {
             Write-Host "A publier : $($skills -join ', ')"
           }
