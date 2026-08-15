@@ -1,0 +1,105 @@
+name: Publier les skills vers la Skills API
+
+# Publie vers l'API Anthropic les skills dont le contenu ou la transformation a changé.
+# Les workflows n8n qui demandent version:"latest" suivent sans modification.
+#
+# Prérequis : secret de dépôt ANTHROPIC_API_KEY.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'skills/**'
+      - 'build/**'
+  workflow_dispatch:
+    inputs:
+      skill:
+        description: "Nom du skill à publier (vide = tous ceux qui ont changé)"
+        required: false
+        type: string
+      dry_run:
+        description: "Construire sans publier"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: publish-skills
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Déterminer les skills à publier
+        id: cibles
+        shell: pwsh
+        run: |
+          $manuel = '${{ inputs.skill }}'.Trim()
+
+          if ($manuel) {
+            $skills = @($manuel)
+          } else {
+            # Un skill est concerné si son dossier source OU sa transformation a bougé.
+            $diff = git diff --name-only ${{ github.event.before }} ${{ github.sha }}
+            $skills = $diff |
+              ForEach-Object {
+                if ($_ -match '^skills/([^/]+)/') { $Matches[1] }
+                elseif ($_ -match '^build/([^/]+)/') { $Matches[1] }
+              } |
+              Where-Object { $_ -and (Test-Path "skills/$_/SKILL.md") } |
+              Sort-Object -Unique
+          }
+
+          if (-not $skills) {
+            Write-Host "Aucun skill concerne."
+          } else {
+            Write-Host "A publier : $($skills -join ', ')"
+          }
+          "liste=$($skills -join ',')" >> $env:GITHUB_OUTPUT
+
+      - name: Publier
+        if: steps.cibles.outputs.liste != ''
+        shell: pwsh
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          $dry = '${{ inputs.dry_run }}' -eq 'true'
+          $echecs = @()
+
+          foreach ($s in '${{ steps.cibles.outputs.liste }}'.Split(',')) {
+            Write-Host "::group::$s"
+            try {
+              if ($dry) {
+                ./build/publish-skill.ps1 -Skill $s -DryRun
+              } else {
+                ./build/publish-skill.ps1 -Skill $s
+              }
+            } catch {
+              Write-Host "::error title=Publication $s::$_"
+              $echecs += $s
+            }
+            Write-Host "::endgroup::"
+          }
+
+          if ($echecs) { throw "Echec de publication : $($echecs -join ', ')" }
+
+      # Le skill_id est un identifiant, pas un secret : on le renvoie dans le repo
+      # pour que les publications suivantes ajoutent une version au lieu d'en créer un autre.
+      - name: Réinjecter les skill_id découverts
+        if: steps.cibles.outputs.liste != '' && inputs.dry_run != true
+        shell: bash
+        run: |
+          if git diff --quiet -- build/skill-ids.json; then
+            echo "Aucun nouveau skill_id."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add build/skill-ids.json
+          git commit -m "build: enregistre les skill_id Anthropic [skip ci]"
+          git push

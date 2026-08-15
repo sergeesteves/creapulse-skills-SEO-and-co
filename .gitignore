@@ -2,3 +2,7 @@
 desktop.ini
 Thumbs.db
 .DS_Store
+
+# Artefacts de build (cf. build/README.md) — on versionne la transformation,
+# jamais son résultat.
+dist/

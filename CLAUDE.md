@@ -36,10 +36,32 @@ vendoring propre, normalisation, puis maintenance via deux veilles (upstream + w
 - **Ne pas industrialiser avant d'avoir rodé un domaine pilote complet** (suggéré : SEO/internal-linking
   ou SEO technical).
 
+## build/ — chaîne de publication (transverse, pas une 4e couche)
+
+`build/` n'est pas une couche de contenu : c'est l'outillage qui publie les skills vers la
+**Skills API d'Anthropic**, pour les rendre consommables depuis n8n sans infra Claude Code.
+Voir [build/README.md](./build/README.md).
+
+**Règle structurante : on versionne la transformation, pas son résultat.**
+Quand on modifie lourdement un skill vendorisé, on n'édite **pas** la copie sous `skills/` —
+elle reste conforme à l'upstream. Les modifications vivent dans `build/<nom>/apply.ps1` et
+sont rejouées au build. C'est ce qui permet de rester `tracking: tracked` malgré une
+modification massive : un bump de `source_sha` produit un diff upstream lisible.
+
+Tracé par le champ `transform:` de `registry.yml` (extension du schéma, cf. note dans le fichier).
+
 ## Statut
 
-**Planification.** Rien de construit côté skills. Prochaine étape = **Phase 0** de la ROADMAP
-(cartographie fine, critères de sélection, squelette `registry.yml`).
+**Amorcé.** Deux skills en place :
+- `dataforseo` (first-party) — playbook cost-aware de l'API DataForSEO.
+- `diagram-design` (tracked + transform) — 27 types de diagrammes éditoriaux, rebrandé
+  Creapulse par script. Premier skill publié vers la Skills API et consommé depuis n8n.
+
+Chaîne `git → Skills API → n8n` opérationnelle et testée (`build/publish-skill.ps1`,
+GitHub Action `publish-skills.yml`).
+
+Reste à faire = **Phase 0** de la ROADMAP (cartographie fine, critères de sélection) pour
+industrialiser la curation. Le squelette `registry.yml` existe.
 
 ## Notes outillage / environnement
 

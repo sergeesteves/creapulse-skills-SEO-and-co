@@ -29,3 +29,36 @@ skills:
       et les garde-fous de coût (API prépayée). Recoupe partiellement le connecteur
       DataForSEO d'AgriciDaniel/claude-seo (ROADMAP §5.1) — ici c'est un skill de
       décision, pas un connecteur.
+
+  diagram-design:
+    source_repo: https://github.com/cathrynlavery/diagram-design
+    source_path: skills/diagram-design/
+    source_sha: 09df49d8d1a1c7fb2efdfcdc7a2a0713534350a6
+    license: MIT
+    tracking: tracked
+    transform: build/diagram-design/apply.ps1
+    local_changes:
+      - >
+        Charte Creapulse : remap des 12 tokens de couleur (+ variantes rgba) sur l'ensemble
+        des références ET des templates de génération — 5 277 occurrences, 118 fichiers.
+        Non remappés volontairement : la palette de séries des graphiques multi-séries et
+        le skin terminal opt-in, qui sont des registres séparés.
+      - >
+        SKILL.md §0 réécrite : la porte d'onboarding upstream pose une question à
+        l'utilisateur au premier diagramme. Insoluble en exécution non interactive (n8n,
+        API). Remplacée par une déclaration de charte active + interdiction explicite de
+        questionner, d'appeler l'onboarding réseau ou de sauvegarder un profil.
+    notes: >
+      27 types de diagrammes éditoriaux, sortie HTML/SVG autoportante. Premier skill du
+      kit publié vers la Skills API d'Anthropic et consommé depuis n8n (workflow
+      `[Référence] Blog · Article + visuels diagram-design`, ID xa7eMUZLZZ9AhyjG).
+
+      IMPORTANT — la copie sous skills/ est CONFORME à l'upstream. Nos modifications ne
+      sont pas appliquées dedans : elles vivent dans `transform` et sont rejouées au build.
+      C'est ce qui permet de rester `tracked` malgré une modification massive : un bump de
+      `source_sha` produit un diff upstream lisible, sans les 5 277 lignes de bruit couleur.
+      Ne jamais éditer skills/diagram-design/ à la main.
+
+      NOTE (à valider par Serge) : le champ `transform` étend le schéma. Il distingue
+      « skill modifié à la main » (fork dur, diff illisible) de « skill transformé par
+      script » (reste suivi). Renommable si tu préfères.
