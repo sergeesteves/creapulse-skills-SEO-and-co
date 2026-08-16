@@ -22,7 +22,7 @@ Set-StrictMode -Version Latest
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 if (-not $Source)  { $Source  = Join-Path $repoRoot 'skills\diagram-design' }
-if (-not $OutRoot) { $OutRoot = Join-Path $repoRoot 'dist' }
+if (-not $OutRoot) { $OutRoot = Join-Path ([System.IO.Path]::GetTempPath()) 'creapulse-skill-build' }  # hors Google Drive (evite les locks de sync)
 
 $fragments = $PSScriptRoot
 $work      = Join-Path $OutRoot 'diagram-design'

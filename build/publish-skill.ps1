@@ -39,13 +39,15 @@ if (-not (Test-Path (Join-Path $skillDir 'SKILL.md'))) { Fail "skills/$Skill/SKI
 # ------------------------------------------------------------------ 1. artefact
 
 $applyPath = Join-Path $PSScriptRoot "$Skill/apply.ps1"
-$distRoot  = Join-Path $repoRoot 'dist'
+# Build hors du repo (donc hors Google Drive) : Drive verrouille les fichiers
+# pendant sa synchro et casse la reecriture des 100+ fichiers du skill.
+$distRoot  = Join-Path ([System.IO.Path]::GetTempPath()) 'creapulse-skill-build'
 
 if (Test-Path $applyPath) {
     Write-Host "Transformation trouvee : build/$Skill/apply.ps1" -ForegroundColor Cyan
     # apply.ps1 est en ErrorActionPreference=Stop : toute ancre manquante leve
     # une exception qui remonte ici et interrompt la publication.
-    & $applyPath
+    & $applyPath -OutRoot $distRoot
     $zip = Join-Path $distRoot "$Skill.zip"
 } else {
     Write-Host "Pas de transformation : publication de skills/$Skill tel quel" -ForegroundColor Cyan
