@@ -48,6 +48,19 @@ skills:
         l'utilisateur au premier diagramme. Insoluble en exécution non interactive (n8n,
         API). Remplacée par une déclaration de charte active + interdiction explicite de
         questionner, d'appeler l'onboarding réseau ou de sauvegarder un profil.
+      - >
+        Typographie : les trois rôles (serif / sans / mono) passent en polices SYSTÈME —
+        Open Sans (déjà servie par le thème Enfold), pile monospace système, Georgia.
+        2 513 occurrences remappées et 107 liens Google Fonts retirés : la skill n'émet
+        plus aucun chargement de police, rien à enqueue côté WordPress. La hiérarchie
+        upstream (mono = technique, sans = noms, serif = titres) est conservée.
+      - >
+        Canevas et planchers typographiques : nouveau preset par défaut
+        `creapulse-article` (viewBox 720 de large, hauteur dérivée du contenu). Le SVG
+        s'affichant en width:100% dans une colonne d'article, dessiner à 1280 le réduisait
+        de 44 % — un libellé à 12px sortait à 6,8px à l'écran. À 720, une unité SVG vaut
+        un pixel, et le ramp impose 14px minimum pour les libellés, 12px pour les
+        légendes. Conséquence assumée : les processus larges passent en vertical.
     notes: >
       27 types de diagrammes éditoriaux, sortie HTML/SVG autoportante. Premier skill du
       kit publié vers la Skills API d'Anthropic et consommé depuis n8n (workflow

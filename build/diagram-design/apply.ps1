@@ -70,9 +70,9 @@ $section0 = (Get-Content (Join-Path $fragments 'section-0.md') -Raw).TrimEnd()
 $skill    = [regex]::Replace($skill, $reSection0, { $section0 }, 'Singleline')
 
 Set-Content $skillPath -Value $skill -NoNewline -Encoding UTF8
-Write-Host "[1/3] SKILL.md §0 remplacee (porte de branding fermee)"
+Write-Host "[1/5] SKILL.md : porte de branding fermee"
 
-# ------------------------------------- 2. style-guide.md : tableau + prose de marque
+# ------------------------------- 2. style-guide.md : couleurs, prose, typographie
 
 $sgPath = Join-Path $work 'references\style-guide.md'
 $sg     = Get-Content $sgPath -Raw
@@ -91,13 +91,68 @@ if (-not [regex]::IsMatch($sg, $reTokens)) {
 $tokens = (Get-Content (Join-Path $fragments 'style-guide-tokens.md') -Raw).TrimEnd()
 $sg     = [regex]::Replace($sg, $reTokens, { $tokens }, 'Singleline')
 
+# 2c. section Typography : trois roles en polices systeme + planchers de taille
+$reTypo = '(?s)## Typography.*?(?=\r?\n---\r?\n\r?\n## Stroke)'
+if (-not [regex]::IsMatch($sg, $reTypo)) {
+    Fail "Ancre 'section Typography' introuvable dans references/style-guide.md."
+}
+$typo = (Get-Content (Join-Path $fragments 'typography.md') -Raw).TrimEnd()
+$sg   = [regex]::Replace($sg, $reTypo, { $typo }, 'Singleline')
+
 Set-Content $sgPath -Value $sg -NoNewline -Encoding UTF8
-Write-Host "[2/3] style-guide.md : tokens Creapulse + notes de contraste"
+Write-Host "[2/5] style-guide.md : tokens Creapulse + typographie systeme"
 
-# --------------------------------------------------- 3. remap global des couleurs
+# --------------------------- 3. output-spec.md : canevas 720 + ramp typographique
 
-# Le style-guide se présente comme "single source of truth", mais les hex sont codés
-# en dur partout, templates de génération compris. Editer le tableau ne suffit pas.
+# Le SVG s'affiche en width:100% dans une colonne d'article (~720px). Dessine a 1280,
+# il est reduit de 44% : un libelle a 12px sort a 6,8px a l'ecran. On dessine donc a
+# 720 pour que l'unite SVG vaille un pixel, et on remonte les planchers a 14 / 12.
+
+$osPath = Join-Path $work 'references\output-spec.md'
+$os     = Get-Content $osPath -Raw
+
+$reDocInline = '(?m)^\| `doc-inline` \(default\) \|.*$'
+if (-not [regex]::IsMatch($os, $reDocInline)) {
+    Fail "Ancre 'ligne doc-inline' introuvable dans references/output-spec.md."
+}
+$lignesPreset = @(
+    '| `creapulse-article` (**default**) | `0 0 720 <fit>` | width fixed at 720, height from content | @2 | creapulse | **Article column. Rendered 1:1 — one SVG unit is one screen pixel.** |'
+    '| `doc-inline` | `0 0 960 600` | 8:5 | 1920x1200 | standard | Body-width diagram in a post or README |'
+) -join [Environment]::NewLine
+$os = [regex]::Replace($os, $reDocInline, { $lignesPreset })
+
+$reRamp = '(?s)\| Role \| standard \| presentation \| print \|.*?\| Min gap between nodes \|[^\r\n]*'
+if (-not [regex]::IsMatch($os, $reRamp)) {
+    Fail "Ancre 'type ramp' introuvable dans references/output-spec.md."
+}
+$ramp = @(
+    '| Role | **creapulse** | standard | presentation | print |'
+    '|---|---|---|---|---|'
+    '| Title (serif) | **22** | 28 | 40 | 32 |'
+    '| Node name (sans 600) | **14** | 12 | 16 | 12 |'
+    '| Sublabel (mono) | **12** | 9 | 12 | 9 |'
+    '| Arrow label (mono) | **12** | 8 | 12 | 8 |'
+    '| Eyebrow / tag (mono) | **12** | 8 | 8 | 8 |'
+    '| Node box min height | **56** | 48 | 64 | 48 |'
+    '| Min gap between nodes | **24** | 24 | 40 | 24 |'
+    ''
+    'The `creapulse` ramp is expressed in **real screen pixels**. The canvas is 720 wide and'
+    'the SVG is displayed at 100% width in a column of roughly that size, so no downscaling'
+    'happens. 14px and 12px are hard floors — never shrink type to win space.'
+    ''
+    '**Consequence — orientation.** At 720 wide, a six-step process laid out horizontally'
+    'cannot hold 14px labels. Stack it vertically instead. Wide horizontal layouts belong to'
+    'the larger presets, not to the article column.'
+) -join [Environment]::NewLine
+$os = [regex]::Replace($os, $reRamp, { $ramp }, 'Singleline')
+
+Set-Content $osPath -Value $os -NoNewline -Encoding UTF8
+Write-Host "[3/5] output-spec.md : preset creapulse-article (720) + planchers 14/12"
+
+# ------------------------------------------ 4. remap global couleurs + polices
+
+# Le style-guide se présente comme "single source of truth", mais les hex et les familles
+# sont codés en dur partout, templates de génération compris. Editer les tableaux ne suffit pas.
 #
 # Ordre sans collision : aucune valeur cible n'apparaît parmi les sources.
 # Volontairement NON remappés : la palette de séries des graphiques multi-séries
@@ -127,30 +182,96 @@ $map = [ordered]@{
     'rgba(250,247,242' = 'rgba(245,245,245'   # paper legacy @ opacite
 }
 
-$files = Get-ChildItem $work -Recurse -Include *.md, *.html -File
-$replaced = 0
+# Polices systeme : rien a telecharger, rien a enqueue cote WordPress.
+$sans  = "'Open Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif"
+$mono  = "ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace"
+$serif = "Georgia, 'Times New Roman', serif"
+
+# ORDRE CRITIQUE : "Geist Mono" AVANT "Geist", sinon les 1490 occurrences du mono
+# deviendraient "<pile sans> Mono". Remplacement en respectant la casse.
+$fonts = [ordered]@{
+    "'Geist Mono', monospace"   = $mono
+    '"Geist Mono", monospace'   = $mono
+    "'Geist Mono'"              = $mono
+    '"Geist Mono"'              = $mono
+    'Geist Mono'                = 'mono'
+    "'Instrument Serif', serif" = $serif
+    '"Instrument Serif", serif' = $serif
+    "'Instrument Serif'"        = $serif
+    '"Instrument Serif"'        = $serif
+    'Instrument Serif'          = 'serif'
+    "'Geist', sans-serif"       = $sans
+    '"Geist", sans-serif'       = $sans
+    "'Geist'"                   = $sans
+    '"Geist"'                   = $sans
+    'Geist'                     = 'sans'
+}
+
+# Le remap laisse les fallbacks d'origine derriere la nouvelle pile
+# ("...Arial, sans-serif, system-ui, sans-serif"). Inoffensif en CSS mais negligé :
+# on recolle. Variantes longues avant les courtes.
+$nettoyage = [ordered]@{
+    'monospace, ui-monospace, Menlo, monospace' = 'monospace'
+    'monospace, ui-monospace, monospace'        = 'monospace'
+    'monospace,ui-monospace,monospace'          = 'monospace'
+    'sans-serif, system-ui, sans-serif'         = 'sans-serif'
+    'sans-serif,system-ui,sans-serif'           = 'sans-serif'
+    "serif, 'Times New Roman', serif"           = 'serif'
+}
+
+$files    = Get-ChildItem $work -Recurse -Include *.md, *.html -File
+$rCouleur = 0
+$rPolice  = 0
+$rLien    = 0
 $touched  = 0
 
 foreach ($f in $files) {
     $txt  = Get-Content $f.FullName -Raw
     $orig = $txt
+
+    # Les references Google Fonts partent en premier : leurs URLs contiennent
+    # "Geist+Mono" et "Instrument+Serif", que le remap ci-dessous mutilerait.
+    # Et la skill ne doit plus emettre aucun chargement de police.
+    $motifsLien = @(
+        '(?i)<link[^>]*fonts\.googleapis\.com[^>]*>\s*'
+        "(?i)@import\s+url\([^)]*fonts\.googleapis\.com[^)]*\);?"
+        '(?i)<link[^>]*fonts\.gstatic\.com[^>]*>\s*'
+    )
+    foreach ($m in $motifsLien) {
+        $n = ([regex]::Matches($txt, $m)).Count
+        if ($n -gt 0) { $rLien += $n; $txt = [regex]::Replace($txt, $m, '') }
+    }
+
     foreach ($k in $map.Keys) {
         $n = ([regex]::Matches($txt, [regex]::Escape($k), 'IgnoreCase')).Count
         if ($n -gt 0) {
-            $replaced += $n
+            $rCouleur += $n
             $txt = [regex]::Replace($txt, [regex]::Escape($k), $map[$k], 'IgnoreCase')
         }
     }
+
+    foreach ($k in $fonts.Keys) {
+        $n = ([regex]::Matches($txt, [regex]::Escape($k))).Count   # casse respectee
+        if ($n -gt 0) {
+            $rPolice += $n
+            $txt = $txt.Replace($k, $fonts[$k])
+        }
+    }
+
+    foreach ($k in $nettoyage.Keys) {
+        if ($txt.Contains($k)) { $txt = $txt.Replace($k, $nettoyage[$k]) }
+    }
+
     if ($txt -ne $orig) {
         Set-Content $f.FullName -Value $txt -NoNewline -Encoding UTF8
         $touched++
     }
 }
-Write-Host "[3/3] Remap couleurs : $replaced occurrences dans $touched fichiers"
-Write-Host ""
+Write-Host "[4/5] Remap : $rCouleur couleurs, $rPolice polices, $rLien liens de police retires ($touched fichiers)"
 
 # ------------------------------------------------------------------ verifications
 
+Write-Host ""
 $errs = @()
 
 # a. plus aucune couleur de l'ancienne charte
@@ -159,7 +280,18 @@ $restes = Select-String -Path (Join-Path $work '*'), (Join-Path $work '**\*') `
     -AllMatches -ErrorAction SilentlyContinue
 if ($restes) { $errs += "Couleurs upstream residuelles : $(($restes | Select-Object -First 3 -ExpandProperty Filename) -join ', ')" }
 
-# b. frontmatter intact et conforme aux contraintes de la Skills API
+# b. plus aucune police upstream, ni chargement distant
+$restesF = Select-String -Path (Join-Path $work '*'), (Join-Path $work '**\*') `
+    -Pattern 'Geist', 'Instrument Serif' -CaseSensitive -AllMatches -ErrorAction SilentlyContinue
+if ($restesF) { $errs += "Polices upstream residuelles : $(($restesF | Select-Object -First 3 -ExpandProperty Filename) -join ', ')" }
+
+# On cible le CHARGEMENT, pas la mention : self_check.py nomme legitimement le
+# domaine dans sa liste blanche, et onboarding.md en parle en prose.
+$restesL = Select-String -Path (Join-Path $work '*'), (Join-Path $work '**\*') `
+    -Pattern '<link[^>]*fonts\.googleapis', '@import[^;]*fonts\.googleapis' -AllMatches -ErrorAction SilentlyContinue
+if ($restesL) { $errs += "Chargement de police residuel : $(($restesL | Select-Object -First 3 -ExpandProperty Filename) -join ', ')" }
+
+# c. frontmatter intact et conforme aux contraintes de la Skills API
 $fm = Get-Content $skillPath -TotalCount 4
 if ($fm[0] -ne '---')                  { $errs += "SKILL.md ne commence pas par un frontmatter." }
 if ($fm[1] -notmatch '^name: [a-z0-9-]{1,64}$') { $errs += "Frontmatter 'name' non conforme : $($fm[1])" }
@@ -167,18 +299,24 @@ $desc = ($fm[2] -replace '^description: ', '')
 if ($fm[2] -notmatch '^description: ') { $errs += "Frontmatter 'description' absent." }
 elseif ($desc.Length -gt 1024)         { $errs += "Description trop longue : $($desc.Length) > 1024." }
 
-# c. la porte est bien fermee
+# d. la porte est bien fermee
 if ((Get-Content $skillPath -Raw) -notmatch 'gate closed') { $errs += "Section 0 non remplacee." }
 
-# d. les templates de generation portent bien l'accent Creapulse
+# e. les templates de generation portent la charte ET la pile systeme
 $tpl = Get-Content (Join-Path $work 'assets\template.html') -Raw
-if ($tpl -notmatch '--color-accent:\s*#f83595') { $errs += "assets/template.html ne porte pas l'accent Creapulse." }
+if ($tpl -notmatch '--color-accent:\s*#f83595')    { $errs += "assets/template.html ne porte pas l'accent Creapulse." }
+if ($tpl -notmatch [regex]::Escape("'Open Sans'")) { $errs += "assets/template.html ne porte pas la pile de polices systeme." }
+
+# f. le canevas 720 et les planchers sont en place
+$osFinal = Get-Content $osPath -Raw
+if ($osFinal -notmatch 'creapulse-article')                       { $errs += "output-spec.md : preset creapulse-article absent." }
+if ($osFinal -notmatch '\| Node name \(sans 600\) \| \*\*14\*\*') { $errs += "output-spec.md : ramp creapulse absent." }
 
 if ($errs) {
     $errs | ForEach-Object { Write-Host "  ECHEC : $_" -ForegroundColor Red }
     Fail "$($errs.Count) verification(s) en echec."
 }
-Write-Host "Verifications : OK (couleurs, frontmatter, porte fermee, templates)" -ForegroundColor Green
+Write-Host "[5/5] Verifications OK : couleurs, polices, chargements, frontmatter, porte, templates, canevas" -ForegroundColor Green
 
 # -------------------------------------------------------------------------- zip
 
