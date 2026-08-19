@@ -61,6 +61,14 @@ skills:
         de 44 % — un libellé à 12px sortait à 6,8px à l'écran. À 720, une unité SVG vaut
         un pixel, et le ramp impose 14px minimum pour les libellés, 12px pour les
         légendes. Conséquence assumée : les processus larges passent en vertical.
+      - >
+        Coût : la section 0 borne aussi la surface d'exploration du modèle. En exécution
+        automatisée elle interdit la lecture des références hors-scope (animation, export,
+        import drawio/mermaid, onboarding, profiles, primitives terminal/sketchy) — chaque
+        fichier lu étant reprocessé à chaque tour de la boucle d'agent, une lecture inutile
+        est payée plusieurs fois. Plafond de 3 passes de génération/vérification.
+        Gain estime ~-30 % de tokens d'entree par diagramme (a confirmer sur les
+        prochains runs ; le poste dominant restant est la boucle de generation Python).
     notes: >
       27 types de diagrammes éditoriaux, sortie HTML/SVG autoportante. Premier skill du
       kit publié vers la Skills API d'Anthropic et consommé depuis n8n (workflow
