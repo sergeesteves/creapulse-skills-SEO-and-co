@@ -102,7 +102,7 @@ skills:
     # documente l'appel au serveur self-hosté (MCP / n8n / REST). Deux provenances, deux veilles.
     additions:
       canonical_repo: https://github.com/sergeesteves/crawl4ai-skill-mcp
-      canonical_sha: a8b6821c24eb2832222fd9859df7ce54c4d01a0f
+      canonical_sha: 9205ba1670db90a0ab5f316981f0efc4674a1b4d
       license: MIT
       tracking: first-party        # notre repo = l'upstream de nos ajouts (pas de veille amont)
       skill_path: skill/           # SKILL.md + references/{mcp,n8n,rest-api,seo-patterns}.md + examples/
