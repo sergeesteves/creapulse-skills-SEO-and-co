@@ -524,3 +524,13 @@ print(f"Cookies: {result.cookies}")
 ```
 
 For more details on any topic, refer to `references/complete-sdk-reference.md` which contains comprehensive documentation of all features, parameters, and advanced usage patterns.
+
+---
+
+## Creapulse — API REST du serveur Docker & usage n8n (ajout local)
+
+Ce skill couvre le **SDK Python** (`AsyncWebCrawler`). Pour appeler un **serveur Crawl4AI
+self-hosté via REST** (ce qu'on fait depuis n8n ou une app), voir
+[`references/rest-api-and-n8n-creapulse.md`](references/rest-api-and-n8n-creapulse.md) :
+endpoints (`/crawl`, `/md`, `/html`, `/screenshot`, `/pdf`, `/execute_js`, `/mcp/schema`),
+auth `Bearer`, le **piège du body `{type, params}`**, et le câblage d'un nœud HTTP Request n8n.
