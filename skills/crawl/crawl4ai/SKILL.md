@@ -527,10 +527,10 @@ For more details on any topic, refer to `references/complete-sdk-reference.md` w
 
 ---
 
-## Creapulse — API REST du serveur Docker & usage n8n (ajout local)
+## Creapulse — Serveur Docker self-hosté : MCP · nœud n8n · REST (ajout local)
 
 Ce skill couvre le **SDK Python** (`AsyncWebCrawler`). Pour appeler un **serveur Crawl4AI
-self-hosté via REST** (ce qu'on fait depuis n8n ou une app), voir
-[`references/rest-api-and-n8n-creapulse.md`](references/rest-api-and-n8n-creapulse.md) :
-endpoints (`/crawl`, `/md`, `/html`, `/screenshot`, `/pdf`, `/execute_js`, `/mcp/schema`),
-auth `Bearer`, le **piège du body `{type, params}`**, et le câblage d'un nœud HTTP Request n8n.
+self-hosté** (le nôtre : `crawl4ai.creapulse.fr`), voir
+[`references/rest-api-and-n8n-creapulse.md`](references/rest-api-and-n8n-creapulse.md) — **3 voies** :
+**MCP** (tools `crawl`/`md`/`html`/`screenshot`/`pdf`/`execute_js`/`ask` ; modes `md.f` = fit/raw/bm25/llm),
+**nœud n8n `crawl4ai-plus`** (dont un op *SEO Metadata*), et **REST** (auth `Bearer`, piège du body `{type, params}`).

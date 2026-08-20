@@ -1,38 +1,81 @@
-# Crawl4AI — API REST du serveur Docker + usage n8n (ajout Creapulse)
+# Crawl4AI self-hosté — 3 voies d'accès : MCP, nœud n8n, REST (ajout Creapulse)
 
 > ⚠️ **Fichier ajouté par Creapulse** (hors zip officiel). Le skill upstream couvre le **SDK Python**
-> (`AsyncWebCrawler`). Ceci couvre le **serveur REST self-hosté** (image `unclecode/crawl4ai`,
-> port par défaut `11235`) — c'est ce qu'on appelle depuis **n8n** / une app externe.
-> Source : docs.crawl4ai.com (Self-Hosting), versions 0.7.x → 0.9.x.
+> (`AsyncWebCrawler`). Ceci couvre le **serveur Docker self-hosté** (`unclecode/crawl4ai`, port `11235`)
+> — c'est ce qu'on appelle depuis Claude (MCP), n8n, ou une app. Sources : docs.crawl4ai.com +
+> schémas MCP réels du serveur Creapulse (`crawl4ai.creapulse.fr`, branché en MCP).
 
-## Authentification
+## Quelle voie selon le contexte
 
-- **0.9.0 = secure-by-default** : le serveur **exige un token**. En-tête `Authorization: Bearer <token>`.
-- Si `security.jwt_enabled: true` dans `config.yml` : d'abord `POST /token` (`{ "email": "..." }`) pour
-  obtenir un JWT, puis Bearer.
-- En 0.8.x la sécurité est off par défaut (pas de token). → **dépend de ta config serveur.**
-- Côté n8n : garde le token dans un **credential** (Header Auth), jamais en clair dans le nœud.
+| Contexte | Voie recommandée |
+|---|---|
+| **Depuis Claude** (Desktop/Code) | Le **connecteur MCP `crawl4ai`** (déjà branché) — tools `crawl` / `md` / `html` / `screenshot` / `pdf` / `execute_js` / `ask` |
+| **Depuis n8n** | Le **nœud communautaire `n8n-nodes-crawl4ai-plus`** (gère credential + wrapping + a un op *SEO Metadata*), sinon **HTTP Request** (portable) |
+| **Depuis une app / du code** | **REST** direct (ou le SDK Python du skill upstream) |
 
-## Endpoints
+## Authentification (serveur 0.9.0 = secure-by-default)
 
-| Méthode | Path | Body | Renvoie |
-|---|---|---|---|
-| POST | `/crawl` | cf. § body ci-dessous | `{ "results": [...] }` (markdown, cleaned_html, links, media, screenshot, pdf, extracted_content…) |
-| POST | `/crawl/stream` | idem `/crawl` | NDJSON streamé (1 résultat par ligne) |
-| POST | `/md` | `{ "url", "f"?, "q"?, "c"? }` | markdown seul (f = filtre, q = requête, c = cache) — **le plus direct pour du contenu SEO** |
-| POST | `/html` | `{ "url" }` | HTML préprocessé (pour extraction de schéma) |
-| POST | `/screenshot` | `{ "url", "screenshot_wait_for"?, "output_path"? }` | PNG (base64 ou id d'artefact en 0.9) |
-| POST | `/pdf` | `{ "url", "output_path"? }` | PDF |
-| POST | `/execute_js` | `{ "url", "scripts": ["return document.title", ...] }` | résultat de crawl + retours JS |
-| GET | `/health` | — | `{ "status": "healthy", "version": "0.7.4" }` |
-| GET | `/schema` | — | schéma complet de l'API |
-| GET | `/metrics` | — | métriques Prometheus |
-| GET | `/mcp/schema` | — | **le serveur expose aussi un endpoint MCP** (utilisable comme connecteur MCP) |
+- Le serveur exige un **token** → en-tête `Authorization: Bearer <token>`. (0.8.x : sécurité off par défaut.)
+- Si `security.jwt_enabled: true` : `POST /token` (`{ "email": "..." }`) → JWT, puis Bearer.
+- n8n : token dans un **credential** (jamais en clair). MCP : géré par la config du connecteur.
 
-## ⚠️ Piège du body `/crawl` : le wrapper `{ type, params }`
+---
 
-`browser_config` et `crawler_config` **ne sont PAS des dicts plats** — ils prennent la forme sérialisée
-(`Config.dump()`). Se tromper là-dessus = erreur de validation.
+## Voie 1 — MCP (tools réels du serveur Creapulse)
+
+Le serveur expose un endpoint MCP (`/mcp/schema`). Tools disponibles depuis Claude :
+
+| Tool | Params | Usage |
+|---|---|---|
+| `crawl` | `urls[]`, `browser_config`, `crawler_config`, `crawler_configs`, `hooks` | crawl complet → CrawlResult JSON (markdown, links, media, extracted_content…) |
+| `md` | `url`, `f` (mode), `q` (requête), `c` (cache, def "0"), `provider`, `temperature` | **markdown** — voir modes ci-dessous |
+| `html` | `url` | HTML préprocessé (pour bâtir un schéma d'extraction) |
+| `screenshot` | `url`, `screenshot_wait_for` (def 2), `wait_for_images` | PNG → `artifact_id` + `url` |
+| `pdf` | `url` | PDF → `artifact_id` + `url` |
+| `execute_js` | `url`, `scripts[]` | exécute des snippets JS (IIFE/async qui **retournent une valeur**) → CrawlResult complet |
+| `ask` | `context_type` (code\|doc\|all), `query`, `score_ratio`, `max_results` | **RAG sur la doc/le code de la LIBRAIRIE Crawl4AI** (pas sur une page arbitraire) — contexte pour générer du code crawl4ai |
+
+**Modes de `md.f`** (clé pour le SEO) :
+- `fit` (défaut) : extraction *Readability* → contenu propre.
+- `raw` : DOM → Markdown brut.
+- `bm25` : **classement de pertinence BM25 par rapport à `q`** → ne garde que les passages pertinents pour une requête. Idéal pour extraire la partie utile d'une page selon une intention.
+- `llm` : résumé LLM avec `q` (nécessite un provider LLM configuré).
+
+> ⚠️ Ne pas confondre : le tool MCP `ask` interroge la **doc de la librairie Crawl4AI**, pas une page web
+> que tu crawles. Pour poser une question *sur une page*, crawle-la (`md`/`crawl`) puis raisonne dessus.
+
+---
+
+## Voie 2 — Nœud n8n `n8n-nodes-crawl4ai-plus`
+
+Repo : https://github.com/msoukhomlinov/n8n-nodes-crawl4ai-plus — **2 nœuds** :
+
+**Crawl4AI Plus** (simple, 4 ops) : *Get Page Content*, *Ask Question* (QA LLM sur la page),
+*Extract Data* (contact/financier/custom, regex ou IA), *CSS Extractor*.
+
+**Crawl4AI Plus Advanced** (15 ops, 3 groupes) :
+- **Crawling** : Crawl URL, Crawl Multiple URLs, Stream Crawl, Process Raw HTML, Discover Links.
+- **Extraction** : LLM Extractor, CSS Extractor, JSON Extractor, Regex Extractor, Cosine Similarity, **SEO Metadata**.
+- **Jobs & Monitoring** : Submit Crawl Job, Submit LLM Job, Get Job Status, Health Check.
+
+**Credential « Crawl4AI API »** : *Docker URL* (déf `http://crawl4ai:11235`), *Authentication*
+(No Auth 0.8.x / **Token** 0.9.0+), *LLM Settings* (OpenAI/Anthropic/Groq/Ollama/LiteLLM).
+Collections de params : *Browser & Session*, *Crawl Settings*, *Output & Filtering*.
+
+**Avantage du nœud** : il gère le credential, le wrapping `{type, params}`, et offre des ops
+prêtes (dont **SEO Metadata**, *Discover Links*, *Cosine Similarity*) — plus rapide que HTTP Request
+pour les cas courants. **Inconvénient** : dépendance à un nœud communautaire (à installer/maintenir).
+
+---
+
+## Voie 3 — REST (HTTP Request n8n / app / curl)
+
+Endpoints : `POST /crawl`, `/crawl/stream`, `/md`, `/html`, `/screenshot`, `/pdf`, `/execute_js` ;
+`GET /health`, `/schema`, `/metrics`, `/mcp/schema`.
+
+### ⚠️ Piège du body `/crawl` : wrapper `{ type, params }`
+
+`browser_config`/`crawler_config` ne sont **pas** des dicts plats (enums en **string**) :
 
 ```json
 {
@@ -42,48 +85,21 @@
 }
 ```
 
-- Les **enums passent en string** (`"cache_mode": "bypass"`, pas l'objet Python).
-- Les clés de `params` = les champs de `BrowserConfig` / `CrawlerRunConfig` (liste complète dans
-  [`complete-sdk-reference.md`](complete-sdk-reference.md)).
+`/md` prend un body simple : `{ "url": "...", "f": "bm25", "q": "ma requête", "c": "0" }`.
 
-## Champs `crawler_config.params` utiles pour le SEO
+### Câblage HTTP Request n8n
+- **Method** POST · **URL** `{{server}}/crawl` (ou `/md`) · **Auth** Header Auth : `Authorization: Bearer <token>` (credential) · **Headers** `Content-Type: application/json` · **Body** JSON raw (structure ci-dessus).
+- Réponse : `results[0].markdown` / `.cleaned_html` / `.links` / `.extracted_content` (si extraction).
 
-- `cache_mode` : `"bypass"` | `"enabled"` | `"disabled"`
-- `css_selector`, `excluded_tags`, `word_count_threshold`
-- `wait_for`, `page_timeout`, `js_code`, `scan_full_page`, `remove_consent_popups`
-- `extraction_strategy` (ex. `JsonCssExtractionStrategy` → extraction structurée **sans LLM**)
-- `screenshot`, `pdf`, `check_robots_txt`, `exclude_external_links`
+### Champs `crawler_config.params` utiles SEO
+`cache_mode`, `css_selector`, `excluded_tags`, `word_count_threshold`, `wait_for`, `js_code`,
+`scan_full_page`, `remove_consent_popups`, `extraction_strategy` (ex. `JsonCssExtractionStrategy`,
+extraction **sans LLM**), `screenshot`, `pdf`, `check_robots_txt`. Liste complète :
+[`complete-sdk-reference.md`](complete-sdk-reference.md).
 
-## Câblage n8n — nœud HTTP Request
+---
 
-- **Method** : `POST`
-- **URL** : `{{server}}/crawl` (ou `{{server}}/md` pour du markdown simple)
-- **Authentication** : *Generic Credential* → **Header Auth** → Name `Authorization`, Value `Bearer <token>`
-  (le token vit dans le credential n8n)
-- **Headers** : `Content-Type: application/json`
-- **Body** : *JSON / raw*, la structure `{type, params}` ci-dessus. Exemple paramétrable :
+## Vérifier la version exacte de ton serveur (sans token)
 
-```json
-{
-  "urls": ["{{ $json.url }}"],
-  "crawler_config": { "type": "CrawlerRunConfig", "params": { "cache_mode": "bypass" } }
-}
-```
-
-- **Lecture de la réponse** : `results[0].markdown` (Markdown), `.cleaned_html`, `.links`,
-  `.extracted_content` (si `extraction_strategy`), `.screenshot` / `.pdf` (base64 ou id).
-
-Règle du pouce : **contenu éditorial/SEO → `/md`** (le plus simple) ; **extraction structurée**
-(prix, produits, SERP maison, données de page) **→ `/crawl` + `extraction_strategy`**.
-
-## Alternative : brancher le serveur en connecteur MCP
-
-Le serveur expose `/mcp/schema` → il peut être utilisé comme **connecteur MCP** (au lieu d'un HTTP
-Request), cohérent avec l'axe connecteurs du kit (ROADMAP §5.5). À évaluer si tu veux l'appeler
-aussi depuis Claude, pas seulement depuis n8n.
-
-## Confirmer la version exacte de TON serveur (sans token)
-
-Les endpoints publics (pas d'auth) permettent d'introspecter la version déployée :
 `GET {{server}}/health` (→ version) et `GET {{server}}/schema` (schéma complet des champs de ta
-version). Utile pour caler le body sur ta version précise plutôt que sur la doc générique.
+version) sont **publics** — utile pour caler le body sur ta version précise.

@@ -98,11 +98,12 @@ skills:
     path: skills/crawl/crawl4ai
     local_changes:
       - >
-        AJOUT Creapulse : references/rest-api-and-n8n-creapulse.md (API REST du serveur Docker
-        self-hosté — endpoints, auth Bearer, piège du body {type, params}, câblage n8n HTTP Request,
-        endpoint MCP) + un pointeur en fin de SKILL.md. Le zip upstream ne couvre que le SDK Python ;
-        on documente la voie REST (celle utilisée depuis n8n). À RÉAPPLIQUER à chaque re-vendoring
-        (le fichier de référence + l'append SKILL.md). Le reste = conforme au zip v0.7.4.
+        AJOUT Creapulse : references/rest-api-and-n8n-creapulse.md — serveur Docker self-hosté,
+        3 voies d'accès : (1) MCP (tools réels : crawl/md/html/screenshot/pdf/execute_js/ask, modes
+        md.f fit/raw/bm25/llm), (2) nœud n8n n8n-nodes-crawl4ai-plus (2 nœuds, ops dont SEO Metadata),
+        (3) REST (auth Bearer, piège du body {type, params}). + pointeur en fin de SKILL.md.
+        Le zip upstream ne couvre que le SDK Python. À RÉAPPLIQUER à chaque re-vendoring
+        (fichier de référence + append SKILL.md). Le reste = conforme au zip v0.7.4.
     notes: >
       Skill OFFICIEL Crawl4AI (unclecode/crawl4ai) : crawling web + extraction structurée
       (AsyncWebCrawler, génération de schéma LLM-free, pages JS, crawl multi-URL). Contenu :
