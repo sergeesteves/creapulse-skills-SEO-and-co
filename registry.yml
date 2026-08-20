@@ -4,7 +4,10 @@
 # Champs par skill :
 #   source_repo   : repo GitHub d'origine
 #   source_path   : chemin du skill dans le repo source
-#   source_sha    : commit exact au moment de la copie (base des diffs de veille upstream)
+#   source_sha    : commit exact au moment de la copie (base des diffs de veille upstream, sources git)
+#   source_type   : (optionnel) git (défaut) | zip — skill distribué en artefact zip, pas en fichier git
+#   source_url    : (zip) URL de téléchargement de l'artefact
+#   source_version: (zip) version au moment de la copie — remplace source_sha ; veille PAR VERSION, pas par SHA
 #   license       : licence du skill source
 #   tracking      : tracked (rester proche upstream) | forked-hard (fait nôtre, plus de sync)
 #                   | first-party (skill écrit maison — la "source" est notre propre repo canonique)
@@ -83,3 +86,33 @@ skills:
       NOTE (à valider par Serge) : le champ `transform` étend le schéma. Il distingue
       « skill modifié à la main » (fork dur, diff illisible) de « skill transformé par
       script » (reste suivi). Renommable si tu préfères.
+
+  crawl4ai:
+    source_type: zip                                     # artefact zip, pas un fichier git → veille par version
+    source_url: https://docs.crawl4ai.com/assets/crawl4ai-skill.zip
+    source_repo: https://github.com/unclecode/crawl4ai   # projet upstream (releases = signal de veille)
+    source_version: 0.7.4                                # remplace source_sha pour ce type de source
+    license: Apache-2.0
+    tracking: tracked
+    domain: crawl
+    path: skills/crawl/crawl4ai
+    local_changes:
+      - Aucune (copie conforme du zip officiel v0.7.4, téléchargé le 2026-08-20).
+    notes: >
+      Skill OFFICIEL Crawl4AI (unclecode/crawl4ai) : crawling web + extraction structurée
+      (AsyncWebCrawler, génération de schéma LLM-free, pages JS, crawl multi-URL). Contenu :
+      SKILL.md + references/complete-sdk-reference.md (225 Ko, progressive disclosure)
+      + scripts/ (basic/batch/extraction_pipeline) + tests/. ~276 Ko.
+
+      DÉPENDANCE : enseigne le SDK Python — les scripts nécessitent `pip install crawl4ai`
+      + `crawl4ai-setup` (Playwright) dans l'environnement d'exécution. Pas de clé API
+      (crawler local, open-source). N'utilise PAS l'API REST hébergée (crawl4ai.creapulse.fr)
+      — c'est la voie SDK Python, pas le connecteur REST.
+
+      VEILLE (spécifique) : la source est un ZIP versionné (docs.crawl4ai.com/assets/
+      crawl4ai-skill.zip), PAS un fichier git → le diff-SHA du kit NE s'applique PAS.
+      Suivre le champ `version:` du frontmatter + les releases unclecode/crawl4ai ;
+      re-télécharger le zip et diff si bump.
+
+      NOTE (à valider) : `source_type: zip` + `source_url` + `source_version` étendent le
+      schéma pour les skills distribués en artefact (zip) plutôt qu'en fichier git.
