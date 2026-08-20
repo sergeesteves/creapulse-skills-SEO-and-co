@@ -96,14 +96,27 @@ skills:
     tracking: tracked
     domain: crawl
     path: skills/crawl/crawl4ai
+    # Nos ajouts (couche d'accès au serveur SELF-HOSTÉ, absente de l'upstream SDK-only) ont
+    # désormais leur MAISON CANONIQUE dans un repo public dédié, séparé de la copie vendorisée
+    # ci-dessus. Ce ne sont PAS le même skill : l'upstream enseigne le SDK Python, notre repo
+    # documente l'appel au serveur self-hosté (MCP / n8n / REST). Deux provenances, deux veilles.
+    additions:
+      canonical_repo: https://github.com/sergeesteves/crawl4ai-skill-mcp
+      canonical_sha: a8b6821c24eb2832222fd9859df7ce54c4d01a0f
+      license: MIT
+      tracking: first-party        # notre repo = l'upstream de nos ajouts (pas de veille amont)
+      skill_path: skill/           # SKILL.md + references/{mcp,n8n,rest-api,seo-patterns}.md + examples/
+      scope: >
+        Couche d'accès au serveur Crawl4AI self-hosté (image unclecode/crawl4ai) : 3 voies
+        (MCP, nœud n8n n8n-nodes-crawl4ai-plus, REST) + pièges (auth Bearer 0.9 secure-by-default,
+        body /crawl {type, params}) + patterns SEO (Markdown BM25, SEO metadata, extraction sans LLM).
     local_changes:
       - >
-        AJOUT Creapulse : references/rest-api-and-n8n-creapulse.md — serveur Docker self-hosté,
-        3 voies d'accès : (1) MCP (tools réels : crawl/md/html/screenshot/pdf/execute_js/ask, modes
-        md.f fit/raw/bm25/llm), (2) nœud n8n n8n-nodes-crawl4ai-plus (2 nœuds, ops dont SEO Metadata),
-        (3) REST (auth Bearer, piège du body {type, params}). + pointeur en fin de SKILL.md.
-        Le zip upstream ne couvre que le SDK Python. À RÉAPPLIQUER à chaque re-vendoring
-        (fichier de référence + append SKILL.md). Le reste = conforme au zip v0.7.4.
+        AJOUT Creapulse : references/rest-api-and-n8n-creapulse.md dans la copie vendorisée —
+        SUPERSEDED par le repo public `crawl4ai-skill-mcp` (cf. bloc `additions`), qui est
+        désormais la maison canonique et plus complète (4 fichiers de référence vs 1). Le fichier
+        en place reste une empreinte historique ; ne plus l'éditer à la main — faire évoluer nos
+        ajouts dans le repo public. Le reste de la copie = conforme au zip upstream v0.7.4.
     notes: >
       Skill OFFICIEL Crawl4AI (unclecode/crawl4ai) : crawling web + extraction structurée
       (AsyncWebCrawler, génération de schéma LLM-free, pages JS, crawl multi-URL). Contenu :
@@ -122,3 +135,8 @@ skills:
 
       NOTE (à valider) : `source_type: zip` + `source_url` + `source_version` étendent le
       schéma pour les skills distribués en artefact (zip) plutôt qu'en fichier git.
+
+      NOTE (à valider) : le bloc `additions` étend aussi le schéma. Il sépare la provenance
+      AMONT (le skill vendorisé, ici tracked) de la maison canonique de NOS ajouts (un repo
+      first-party public). Utile quand nos apports deviennent assez gros pour vivre dans leur
+      propre repo plutôt qu'en `local_changes` bricolés dans la copie. Renommable si besoin.
